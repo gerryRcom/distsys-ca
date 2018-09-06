@@ -12,8 +12,8 @@ Foreach ($event in $events)
 
 #Pull list of nodes from txt DNS txt record
 $txtRecords = Resolve-DnsName gerryr.com -Type TXT
-$activeNodes = $()
-$nodeResponse = $()
+$activeNodes = @()
+$nodeResponses = @()
 Foreach ($record in $txtRecords)
 {
     #find the specific txt record, it will begin with the word "nodes"
@@ -24,16 +24,106 @@ Foreach ($record in $txtRecords)
         Foreach ($item in $content.SubString(6).split('$'))
         {
             $node = $item+".gerryr.com"
-            If (Test-Connection -ComputerName $node -Quiet)
+            If (Test-NetConnection -ComputerName $node -InformationLevel Quiet)
             {
-                If(Test-NetConnection -Computername $node -Port 80)
+                If(Test-NetConnection -Computername $node -Port 22)
                 {
                     $activeNodes += $node
-                    $nodeResponse += (test-netconnection -computername $node).PingReplyDetails.RoundTripTime
+                    $nodeResponses += (test-netconnection -computername $node).PingReplyDetails.RoundTripTime
                 }                
             }
     }
-    Write-Host $activeNodes
-    Write-Host $nodeResponse
+}
+}
+
+#Quick error check in case there was a connection issue between connectivity tests resulting node discrepancy
+$aN = $activeNodes.Count
+$nR = $nodeResponses.Count
+If($activeNodes.Count -eq 0 -or $nodeResponses.Count -eq 0 -or $aN -ne $nR)
+{
+    exit
+}
+
+#Determine the fastest responder from list of available nodes
+$nodeIndex = $aN - 1
+$selectedNode = 0
+if($nodeIndex -eq 0)
+{
+    $selectedNode = $activeNodes[$nodeIndex]
+}
+else 
+{
+    While($nodeIndex -gt 0)
+{
+    If($nodeResponse[$nodeIndex] -lt $nodeResponses[$nodeIndex - 1])
+    {
+        $selectedNode = $activeNodes[$nodeIndex]
     }
+    else {
+        $selectedNode = $activeNodes[$nodeIndex - 1]
+    }
+    $nodeIndex--
+}
+}
+
+##
+## Begin Transfer of files to selected server
+## Code exaple taken from here: https://winscp.net/eng/docs/library_powershell
+##
+
+#Get password from text file on system
+$Path = "C:\_IT\log\credentials.txt"
+$values = Get-Content $Path | Out-String | ConvertFrom-StringData
+
+try
+{
+    # Load WinSCP .NET assembly
+    Add-Type -Path "C:\_IT\log\WinSCP\WinSCPnet.dll"
+ 
+    # Setup session options
+    $sessionOptions = New-Object WinSCP.SessionOptions -Property @{
+        Protocol = [WinSCP.Protocol]::Sftp
+        HostName = $selectedNode
+        UserName = $values.user
+        Password = $values.password
+        #SshHostKeyFingerprint = "ssh-rsa 2048 xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx"
+        GiveUpSecurityAndAcceptAnySshHostKey = "True"
+    }
+ 
+    $session = New-Object WinSCP.Session
+ 
+    try
+    {
+        # Connect
+        $session.Open($sessionOptions)
+ 
+        # Upload files
+        $transferOptions = New-Object WinSCP.TransferOptions
+        $transferOptions.TransferMode = [WinSCP.TransferMode]::Binary
+ 
+        $transferResult = $session.PutFiles("C:\_IT\log\*.xml", "/home/log-transfer/incoming-logs/", $False, $transferOptions)
+ 
+        # Throw on any error
+        $transferResult.Check()
+ 
+        # Print results
+        #foreach ($transfer in $transferResult.Transfers)
+        #{
+        #    Write-Host "Upload of $($transfer.FileName) succeeded"
+        #}
+    }
+    finally
+    {
+        # Disconnect, clean up
+        $session.Dispose()
+    }
+    #Once sucessful transfer has occured, transfer log files to log-archive folder and delete log archives older than 7 days
+    Get-ChildItem -Path "C:\_IT\log\*.xml" -Recurse | Move-Item -Destination "C:\_IT\log\log-archives"
+    Get-ChildItem -Path "C:\_IT\log\log-archives" -Recurse -File | Where CreationTime -lt (Get-Date).AddDays(-5) | Remove-Item -Force
+    exit 0
+}
+catch
+{
+    Write-Host "Error: $($_.Exception.Message)"
+    exit 1
 }
