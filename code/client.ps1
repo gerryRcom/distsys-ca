@@ -119,11 +119,11 @@ try
     }
     #Once sucessful transfer has occured, transfer log files to log-archive folder and delete log archives older than 7 days
     Get-ChildItem -Path "C:\_IT\log\*.xml" -Recurse | Move-Item -Destination "C:\_IT\log\log-archives"
-    Get-ChildItem -Path "C:\_IT\log\log-archives" -Recurse -File | Where CreationTime -lt (Get-Date).AddDays(-5) | Remove-Item -Force
+    Get-ChildItem -Path "C:\_IT\log\log-archives\" -Recurse | Where-Object {($_.LastWriteTime -lt (Get-Date).AddDays(-7))} | Remove-Item -Force
     exit 0
 }
 catch
 {
-    Write-Host "Error: $($_.Exception.Message)"
+    #Write-Host "Error: $($_.Exception.Message)"
     exit 1
 }
