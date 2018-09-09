@@ -87,6 +87,7 @@ try
         UserName = $values.user
         Password = $values.password
         #SshHostKeyFingerprint = "ssh-rsa 2048 xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx"
+        #Removing host key check as the addition of a new receiver-node would result in a new key the clients would not be aware of
         GiveUpSecurityAndAcceptAnySshHostKey = "True"
     }
  
@@ -125,5 +126,6 @@ try
 catch
 {
     #Write-Host "Error: $($_.Exception.Message)"
+    #If transfer return an error the script will exit leaving the log files in the folder for the next time
     exit 1
 }
