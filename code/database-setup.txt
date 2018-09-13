@@ -1,0 +1,57 @@
+sudo yum update /y
+https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-centos-7
+
+sudo yum install mariadb-server
+sudo systemctl start mariadb
+sudo systemctl enable mariadb
+sudo mysql_secure_installation
+
+sudo vi /etc/my.cnf
+
+mysql -u root -p
+CREATE DATABASE IF NOT EXISTS database_name;
+USE database_name;
+CREATE TABLE IF NOT EXISTS database_name(log_guid varchar(50) NOT NULL, machine_name varchar(50) DEFAULT NULL, event_src varchar(100) DEFAULT NULL, event_id int(20) DEFAULT NULL, event_level int(5) DEFAULT NULL, event_msg varchar(250) DEFAULT NULL, log_time datetime DEFAULT NULL, PRIMARY KEY(log_guid));
+show columns in log_data;
+
+
+CREATE USER 'datebase_user'@'%' IDENTIFIED BY 'ENTERPASSWORD';
+GRANT INSERT,UPDATE ON database_name.* TO 'datebase_user'@'%';
+
+Replication setup
+-----------------
+https://mariadb.com/kb/en/library/setting-up-replication/
+
+ON MASTER
+---------
+Add to master /etc/my.cnf
+[mariadb]
+log-bin
+server_id=1
+log-basename=master1
+
+CREATE USER 'rep_account'@'%' IDENTIFIED BY 'PASSWORD';
+GRANT REPLICATION SLAVE ON *.* TO 'rep_account'@'%'; 
+
+ON SLAVE
+--------
+Create database_name the same as on master.
+
+CHANGE MASTER TO
+  MASTER_HOST='DATABASE_MASTER',
+  MASTER_USER='rep_account',
+  MASTER_PASSWORD='PASSWORD',
+  MASTER_PORT=3306,
+  MASTER_CONNECT_RETRY=10;
+
+SET GLOBAL server_id=3;
+START SLAVE;
+SHOW SLAVE STATUS \G
+
+-----
+Read access to Slave
+
+CREATE USER 'read_only'@'%' IDENTIFIED BY 'PASSWORD';
+GRANT SELECT ON database_name.* TO 'read_only'@'%';
+
+sudo firewall-cmd --zone=public --add-service=mysql --permanent
