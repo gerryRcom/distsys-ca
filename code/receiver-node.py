@@ -1,5 +1,6 @@
 import os
 import socket
+import shutil
 from bs4 import BeautifulSoup
 import mysql.connector
 #import xml.etree.ElementTree as ET
@@ -32,7 +33,7 @@ for file in os.listdir("/home/log-transfer/incoming-logs/"):
         #If DB connection is sucessful, insert the parsed data into the database
         if result == 0:
                 #print "Port is open"
-                db_connect = mysql.connector.connect(host="SERVER",user="DATABASEUSER",passwd="ENTERPASSWORD",database="DATABASENAME")
+                db_connect = mysql.connector.connect(host="10.166.0.2",user="USERNAME",passwd="PASSWORD",database="DATABASENAME")
                 db_cursor = db_connect.cursor()
 
                 insert_command = "INSERT INTO log_data (log_guid, machine_name, event_src, event_id, event_level, event_msg) VALUES (%s, %s, %s, %s, %s, %s)"
@@ -43,8 +44,6 @@ for file in os.listdir("/home/log-transfer/incoming-logs/"):
                         db_connect.commit()
                         db_connect.close()
                         #print("insert ran")
-                        #Given DB insert for this file has suceeded, transfer current log file to log-archive sub-folder
-                        #os.rename(file, "/home/log-transfer/incoming-logs/log-archives/")
                 except:
                         db_connect.rollback()
                         db_connect.close()
@@ -53,3 +52,7 @@ for file in os.listdir("/home/log-transfer/incoming-logs/"):
         else:
                 print "Port is not open"
                 exit()
+        #Once content was sucessfully entered into database, move current log file to archive folder
+        moveTo='/home/log-transfer/incoming-logs/log-archives/'
+        moveFrom='/home/log-transfer/incoming-logs/'
+        shutil.move(moveFrom+file, moveTo)

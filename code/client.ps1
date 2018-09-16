@@ -35,7 +35,6 @@ Foreach ($record in $txtRecords)
     }
 }
 }
-
 #Quick error check in case there was a connection issue between connectivity tests resulting node discrepancy
 $aN = $activeNodes.Count
 $nR = $nodeResponses.Count
@@ -55,7 +54,7 @@ else
 {
     While($nodeIndex -gt 0)
 {
-    If($nodeResponse[$nodeIndex] -lt $nodeResponses[$nodeIndex - 1])
+    If($nodeResponses[$nodeIndex] -lt $nodeResponses[$nodeIndex - 1])
     {
         $selectedNode = $activeNodes[$nodeIndex]
     }
@@ -65,7 +64,7 @@ else
     $nodeIndex--
 }
 }
-
+Write-Host $selectedNode
 ##
 ## Begin Transfer of files to selected server
 ## Code exaple taken from here: https://winscp.net/eng/docs/library_powershell
