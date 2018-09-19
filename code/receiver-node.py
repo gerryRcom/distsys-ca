@@ -33,11 +33,11 @@ for file in os.listdir("/home/log-transfer/incoming-logs/"):
         #If DB connection is sucessful, insert the parsed data into the database
         if result == 0:
                 #print "Port is open"
-                db_connect = mysql.connector.connect(host="10.166.0.2",user="USERNAME",passwd="PASSWORD",database="DATABASENAME")
+                db_connect = mysql.connector.connect(host="10.166.0.2",user="DBUSER",passwd="DBPASSWORD",database="DBNAME")
                 db_cursor = db_connect.cursor()
 
-                insert_command = "INSERT INTO log_data (log_guid, machine_name, event_src, event_id, event_level, event_msg) VALUES (%s, %s, %s, %s, %s, %s)"
-                insert_data = (log_guid, machineName, eventSource, eventID, eventLevel, message)
+                insert_command = "INSERT INTO DBNAME (log_guid, machine_name, event_src, event_id, event_level, event_msg, log_time) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+                insert_data = (log_guid, machineName, eventSource, eventID, eventLevel, message, eventTime)
                 #Check for any error during DB insert, if an error returns cancel the insert
                 try:
                         db_cursor.execute(insert_command,insert_data)

@@ -1,4 +1,3 @@
-
 sudo yum update
 sudo yum install python-lxml.x86_64 python-beautifulsoup4 mysql-connector-python
 sudo useradd log-transfer
@@ -9,5 +8,6 @@ su log-transfer
 cd ~
 mkdir incoming-logs
 mkdir incoming-logs/log-archives
+cd incoming-logs
 vi receiver-node.py (Copy script to it)
 crontab -e (Add: 0 * * * * python /home/log-transfer/incoming-logs/receiver-node.py >> /home/log-transfer/incoming-logs/receiver-node.log)

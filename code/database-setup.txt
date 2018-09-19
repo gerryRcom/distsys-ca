@@ -1,4 +1,4 @@
-sudo yum update /y
+sudo yum update
 https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-centos-7
 
 sudo yum install mariadb-server
@@ -16,7 +16,7 @@ show columns in log_data;
 
 
 CREATE USER 'datebase_user'@'%' IDENTIFIED BY 'ENTERPASSWORD';
-GRANT INSERT,UPDATE ON database_name.* TO 'datebase_user'@'%';
+GRANT INSERT,UPDATE ON database_name.* TO 'database_user'@'%';
 
 Replication setup
 -----------------
